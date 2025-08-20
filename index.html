@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CUA: AI Orchestration Engine ✨</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            margin:0;
+            min-height:100vh;
+            background:radial-gradient(1200px 600px at 10% -10%, #1e293b 0%, #0b0e11 60%),
+                        url('https://images.dreamstime.com/las-vegas-nevada-april-vibrant-night-scene-strip-featuring-eiffel-tower-replica-colorful-hot-air-balloon-bustling-image339110456.jpg') center/cover fixed; 
+            background-blend-mode:overlay;
+        }
+        .font-mono { 
+            font-family: 'Roboto Mono', monospace; 
+        }
+        .gemini-btn {
+            background: linear-gradient(to right, #4f46e5, #818cf8);
+            transition: all 0.3s ease;
+        }
+        .gemini-btn:hover {
+            box-shadow: 0 0 15px rgba(129, 140, 248, 0.5);
+        }
+        .xterm .xterm-viewport { 
+            width: 100% !important; /* Fix for xterm width issue */
+        }
+        
+        /* Neon Glow Effects */
+        .glow-blue {
+            --tw-shadow-color: #3b82f6; /* blue-500 */
+            --tw-shadow: 0 0 8px 0px var(--tw-shadow-color);
+            box-shadow: 0 0 0 1px transparent, var(--tw-shadow);
+            transition: box-shadow 0.3s ease-in-out;
+        }
+        .glow-yellow {
+             --tw-shadow-color: #eab308; /* yellow-500 */
+            --tw-shadow: 0 0 8px 0px var(--tw-shadow-color);
+            box-shadow: 0 0 0 1px transparent, var(--tw-shadow);
+            transition: box-shadow 0.3s ease-in-out;
+        }
+        .glow-green {
+            --tw-shadow-color: #22c55e; /* green-500 */
+            --tw-shadow: 0 0 8px 0px var(--tw-shadow-color);
+            box-shadow: 0 0 0 1px transparent, var(--tw-shadow);
+            transition: box-shadow 0.3s ease-in-out;
+        }
+        .glow-red {
+            --tw-shadow-color: #ef4444; /* red-500 */
+            --tw-shadow: 0 0 8px 0px var(--tw-shadow-color);
+            box-shadow: 0 0 0 1px transparent, var(--tw-shadow);
+            transition: box-shadow 0.3s ease-in-out;
+        }
+
+        /* For focus states on inputs */
+        .input-glow-green:focus {
+            --tw-shadow-color: #22c55e; /* green-500 */
+            --tw-shadow: 0 0 8px 0px var(--tw-shadow-color);
+            box-shadow: 0 0 0 1px transparent, var(--tw-shadow);
+            outline: none;
+            border-color: #22c55e;
+        }
+        
+        /* --- NEW LANDING PAGE & NEON STYLES --- */
+        .landing-page-bg {
+            background-image: url('https://images.unsplash.com/photo-1583311894928-85070c54a34b?q=80&w=2560&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        .neon-text-glow {
+            text-shadow:
+                0 0 5px rgba(255, 255, 255, 0.9),
+                0 0 10px rgba(255, 255, 255, 0.6),
+                0 0 20px rgba(238, 130, 238, 0.7), /* Violet */
+                0 0 30px rgba(238, 130, 238, 0.6),
+                0 0 40px rgba(238, 130, 238, 0.5),
+                0 0 55px rgba(238, 130, 238, 0.4),
+                0 0 75px rgba(238, 130, 238, 0.3);
+        }
+
+        .neon-text-glow-subtle {
+            text-shadow:
+                0 0 5px rgba(255, 255, 255, 0.7),
+                0 0 10px rgba(0, 255, 255, 0.5); /* Cyan */
+        }
+
+        .neon-button {
+            border: 2px solid #fff;
+            color: #fff;
+            text-shadow: 0 0 5px #fff, 0 0 10px #0ff, 0 0 15px #0ff;
+            box-shadow: 0 0 10px 2px rgba(0, 255, 255, 0.4), inset 0 0 10px 2px rgba(0, 255, 255, 0.4);
+            transition: all 0.3s ease-in-out;
+            animation: pulse-neon 2.5s infinite;
+        }
+        .neon-button:hover {
+            box-shadow: 0 0 20px 5px rgba(0, 255, 255, 0.8), inset 0 0 20px 5px rgba(0, 255, 255, 0.8);
+            transform: scale(1.05);
+            animation: none;
+        }
+
+        @keyframes pulse-neon {
+            0%, 100% {
+                box-shadow: 0 0 10px 2px rgba(0, 255, 255, 0.4), inset 0 0 10px 2px rgba(0, 255, 255, 0.4);
+                text-shadow: 0 0 5px #fff, 0 0 10px #0ff, 0 0 15px #0ff;
+            }
+            50% {
+                box-shadow: 0 0 15px 4px rgba(0, 255, 255, 0.6), inset 0 0 15px 4px rgba(0, 255, 255, 0.6);
+                text-shadow: 0 0 10px #fff, 0 0 20px #0ff, 0 0 25px #0ff;
+            }
+        }
+
+        /* --- NEW GLASS MORPHISM SYSTEM --- */
+        :root {
+            --glass-bg-rgb: 23, 27, 35;
+            --glass-alpha: .35;
+            --glass-blur: 16px;
+            --neon-a: 255,0,200;
+            --neon-b: 0,229,255;
+        }
+        .glass { 
+            background: rgba(var(--glass-bg-rgb), var(--glass-alpha));
+            backdrop-filter: blur(var(--glass-blur)) saturate(120%);
+            -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(120%);
+            border: 1px solid rgba(255,255,255,.15);
+            box-shadow: 0 8px 30px rgba(0,0,0,.35);
+            border-radius: 16px;
+        }
+        .neon { position: relative; }
+        .neon::before {
+            content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1px;
+            background: linear-gradient(120deg, rgb(var(--neon-b)) 0%, rgb(var(--neon-a)) 50%, rgb(var(--neon-b)) 100%);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+            filter: drop-shadow(0 0 12px rgba(var(--neon-a),.45));
+        }
+        .glass-strong { --glass-alpha: .20; --glass-blur: 22px; }
+        .glass-subtle { --glass-alpha: .50; --glass-blur: 10px; }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.1.0/",
+    "react": "https://esm.sh/react@^19.1.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+    "@google/genai": "https://esm.sh/@google/genai"
+  }
+}
+</script>
+</head>
+<body class="text-gray-200">
+    <div id="root"></div>
+</body>
+</html>
