@@ -1,7 +1,8 @@
 
+
 import React from 'react';
 import { type GeneratedSpa } from '../types';
-import { RocketLaunchIcon } from './icons';
+import { RocketLaunchIcon, CodeIcon, DownloadIcon } from './icons';
 
 interface SpaManagementPanelProps {
     isOpen: boolean;
@@ -10,13 +11,26 @@ interface SpaManagementPanelProps {
     onPreview: (spa: GeneratedSpa) => void;
     onReenact: (spa: GeneratedSpa) => void;
     onShareContext: (spa: GeneratedSpa) => void;
+    onViewHtml: (spa: GeneratedSpa) => void;
 }
 
-export default function SpaManagementPanel({ isOpen, onClose, spa, onPreview, onReenact, onShareContext }: SpaManagementPanelProps): React.ReactNode {
+export default function SpaManagementPanel({ isOpen, onClose, spa, onPreview, onReenact, onShareContext, onViewHtml }: SpaManagementPanelProps): React.ReactNode {
     if (!spa) return null;
 
     const handleAction = (action: (spa: GeneratedSpa) => void) => {
         action(spa);
+    };
+    
+    const handleDownload = (spaToDownload: GeneratedSpa) => {
+        const blob = new Blob([spaToDownload.command], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${spaToDownload.id}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     };
 
     return (
@@ -48,8 +62,22 @@ export default function SpaManagementPanel({ isOpen, onClose, spa, onPreview, on
                             onClick={() => handleAction(onPreview)}
                             className="w-full text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors bg-blue-600 hover:bg-blue-700">
                             <RocketLaunchIcon className="w-5 h-5"/>
-                            Preview SPA
+                            Preview SPA Details
                         </button>
+                        <div className="grid grid-cols-2 gap-3">
+                             <button 
+                                onClick={() => handleAction(onViewHtml)}
+                                className="w-full text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors bg-teal-600 hover:bg-teal-700">
+                                <CodeIcon className="w-5 h-5"/>
+                                View HTML
+                            </button>
+                             <button
+                                onClick={() => handleDownload(spa)}
+                                className="w-full text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors bg-gray-600 hover:bg-gray-700">
+                                <DownloadIcon className="w-5 h-5" />
+                                Download
+                            </button>
+                        </div>
                          <button 
                             onClick={() => handleAction(onShareContext)}
                             className="w-full text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors bg-purple-600 hover:bg-purple-700">

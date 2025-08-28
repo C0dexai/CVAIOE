@@ -1,7 +1,9 @@
 
 
+
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { type Agent, type ConversationTurn } from '../types';
+import { type Agent, type ConversationTurn, type LlmSelection } from '../types';
 import { CODEX_DATA } from '../constants';
 import Card from './Card';
 import { AbacusIcon, GeminiIcon, OpenAiIcon, LoaderIcon, CogIcon, CopyIcon, BookmarkOutlineIcon, BookmarkFilledIcon, ThumbUpIcon, ThumbDownIcon } from './icons';
@@ -9,10 +11,8 @@ import { NeonDoc } from './NeonDoc';
 import { getGeminiResponse, getOpenAiResponse, getAbacusResponse } from './llm';
 
 interface AgenticCoreTabProps {
-    geminiApiKey: string;
-    openaiApiKey: string;
-    abacusApiKey: string;
     showError: (message: string) => void;
+    openAiApiKey: string;
 }
 
 const WelcomePanel = () => (
@@ -31,7 +31,8 @@ const TriChatInterface = ({
     votedTurns,
     onCopy,
     onBookmark,
-    onVote
+    onVote,
+    selectedLlm,
 }: { 
     agent: Agent, 
     conversation: ConversationTurn[], 
@@ -41,7 +42,8 @@ const TriChatInterface = ({
     votedTurns: { [key: number]: 'up' | 'down' | undefined },
     onCopy: (turn: ConversationTurn) => void,
     onBookmark: (index: number) => void,
-    onVote: (index: number, vote: 'up' | 'down') => void
+    onVote: (index: number, vote: 'up' | 'down') => void,
+    selectedLlm: LlmSelection,
 }) => {
     const [input, setInput] = useState('');
     const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -60,6 +62,15 @@ const TriChatInterface = ({
             setInput('');
         }
     };
+
+    const getEmptyStateText = () => {
+        switch(selectedLlm) {
+            case 'gemini': return `Your first inference will be answered by Gemini through the lens of ${agent.name}.`;
+            case 'openai': return `Your first inference will be answered by OpenAI through the lens of ${agent.name}.`;
+            case 'abacus': return `Your first inference will be answered by Abacus through the lens of ${agent.name}.`;
+            default: return `Your first inference will be answered by Gemini, OpenAI, and Abacus through the lens of ${agent.name}.`;
+        }
+    };
     
     return (
         <div className="mt-6 flex flex-col h-full">
@@ -67,7 +78,7 @@ const TriChatInterface = ({
                 {conversation.length === 0 && (
                      <div className="text-center text-gray-400 pt-16">
                         <p className="text-lg">The conversation begins here.</p>
-                        <p className="text-sm">Your first inference will be answered by Gemini, OpenAI, and Abacus through the lens of {agent.name}.</p>
+                        <p className="text-sm">{getEmptyStateText()}</p>
                     </div>
                 )}
                 {conversation.map((turn, index) => (
@@ -98,19 +109,25 @@ const TriChatInterface = ({
                         </div>
 
                         {/* AI Responses */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="p-3 rounded-lg bg-gray-700/80">
-                                <h4 className="flex items-center gap-2 text-md font-semibold text-cyan-300 mb-2"><GeminiIcon className="w-5 h-5" /> Gemini</h4>
-                                <p className="text-sm text-gray-200 whitespace-pre-wrap">{turn.gemini}</p>
-                            </div>
-                            <div className="p-3 rounded-lg bg-gray-700/80">
-                                <h4 className="flex items-center gap-2 text-md font-semibold text-green-300 mb-2"><OpenAiIcon className="w-5 h-5" /> OpenAI</h4>
-                                <p className="text-sm text-gray-200 whitespace-pre-wrap">{turn.openai}</p>
-                            </div>
-                             <div className="p-3 rounded-lg bg-gray-700/80">
-                                <h4 className="flex items-center gap-2 text-md font-semibold text-yellow-300 mb-2"><AbacusIcon className="w-5 h-5" /> Abacus</h4>
-                                <p className="text-sm text-gray-200 whitespace-pre-wrap">{turn.abacus}</p>
-                            </div>
+                        <div className="flex flex-col md:flex-row gap-4">
+                            {turn.gemini && (
+                                <div className="flex-1 p-3 rounded-lg bg-gray-700/80">
+                                    <h4 className="flex items-center gap-2 text-md font-semibold text-cyan-300 mb-2"><GeminiIcon className="w-5 h-5" /> Gemini</h4>
+                                    <p className="text-sm text-gray-200 whitespace-pre-wrap">{turn.gemini}</p>
+                                </div>
+                            )}
+                            {turn.openai && (
+                                <div className="flex-1 p-3 rounded-lg bg-gray-700/80">
+                                    <h4 className="flex items-center gap-2 text-md font-semibold text-green-300 mb-2"><OpenAiIcon className="w-5 h-5" /> OpenAI</h4>
+                                    <p className="text-sm text-gray-200 whitespace-pre-wrap">{turn.openai}</p>
+                                </div>
+                            )}
+                             {turn.abacus && (
+                                <div className="flex-1 p-3 rounded-lg bg-gray-700/80">
+                                    <h4 className="flex items-center gap-2 text-md font-semibold text-yellow-300 mb-2"><AbacusIcon className="w-5 h-5" /> Abacus</h4>
+                                    <p className="text-sm text-gray-200 whitespace-pre-wrap">{turn.abacus}</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 ))}
@@ -140,12 +157,15 @@ const AgentDetailPanel = ({ agent, ...props }: { agent: Agent } & AgenticCoreTab
     const [isResponding, setIsResponding] = useState(false);
     const [bookmarkedTurns, setBookmarkedTurns] = useState<number[]>([]);
     const [votedTurns, setVotedTurns] = useState<{ [key: number]: 'up' | 'down' | undefined }>({});
+    const [selectedLlm, setSelectedLlm] = useState<LlmSelection>('all');
+    const [customPrompt, setCustomPrompt] = useState('');
     
     useEffect(() => {
         // Reset state when agent changes
         setConversation([]);
         setBookmarkedTurns([]);
         setVotedTurns({});
+        setCustomPrompt('');
     }, [agent]);
 
     const getAgentAvatar = () => {
@@ -167,22 +187,44 @@ const AgentDetailPanel = ({ agent, ...props }: { agent: Agent } & AgenticCoreTab
 
     const handleSendMessage = async (text: string) => {
         setIsResponding(true);
+        const userMessageWithPrompt = customPrompt ? `${customPrompt}\n\n${text}` : text;
+        const fullPrompt = `From the perspective of the AI agent ${agent.name}, whose role is "${agent.role}", provide a concise and in-character response to the following user prompt: "${userMessageWithPrompt}"`;
+        
         const loadingTurn: ConversationTurn = {
             user: text,
-            gemini: "Thinking...",
-            openai: "Thinking...",
-            abacus: "Thinking...",
+            gemini: selectedLlm === 'gemini' || selectedLlm === 'all' ? "Thinking..." : "",
+            openai: selectedLlm === 'openai' || selectedLlm === 'all' ? "Thinking..." : "",
+            abacus: selectedLlm === 'abacus' || selectedLlm === 'all' ? "Thinking..." : "",
         };
         setConversation(prev => [...prev, loadingTurn]);
         
         try {
-            const fullPrompt = `From the perspective of the AI agent ${agent.name}, whose role is "${agent.role}", provide a concise and in-character response to the following user prompt: "${text}"`;
-            
-            const [geminiResponse, openaiResponse, abacusResponse] = await Promise.all([
-                getGeminiResponse(props.geminiApiKey, fullPrompt),
-                getOpenAiResponse(props.openaiApiKey, fullPrompt),
-                getAbacusResponse(props.geminiApiKey, fullPrompt),
-            ]);
+            let geminiResponse = "";
+            let openaiResponse = "";
+            let abacusResponse = "";
+
+            if (selectedLlm === 'all') {
+                const [gem, open, abac] = await Promise.all([
+                    getGeminiResponse(fullPrompt),
+                    getOpenAiResponse(fullPrompt, props.openAiApiKey),
+                    getAbacusResponse(fullPrompt),
+                ]);
+                geminiResponse = gem;
+                openaiResponse = open;
+                abacusResponse = abac;
+            } else {
+                 switch (selectedLlm) {
+                    case 'gemini':
+                        geminiResponse = await getGeminiResponse(fullPrompt);
+                        break;
+                    case 'openai':
+                        openaiResponse = await getOpenAiResponse(fullPrompt, props.openAiApiKey);
+                        break;
+                    case 'abacus':
+                        abacusResponse = await getAbacusResponse(fullPrompt);
+                        break;
+                }
+            }
 
             const finalTurn: ConversationTurn = {
                 user: text,
@@ -201,9 +243,9 @@ const AgentDetailPanel = ({ agent, ...props }: { agent: Agent } & AgenticCoreTab
             props.showError(`An error occurred while communicating with the LLMs: ${e.message}`);
              const errorTurn: ConversationTurn = {
                 user: text,
-                gemini: "Error fetching response.",
-                openai: "Error fetching response.",
-                abacus: "Error fetching response.",
+                gemini: selectedLlm === 'gemini' || selectedLlm === 'all' ? "Error fetching response." : "",
+                openai: selectedLlm === 'openai' || selectedLlm === 'all' ? "Error fetching response." : "",
+                abacus: selectedLlm === 'abacus' || selectedLlm === 'all' ? "Error fetching response." : "",
             };
              setConversation(prev => {
                 const newConversation = [...prev];
@@ -247,6 +289,13 @@ ${turn.abacus}
 
     const collectedBookmarks = conversation.filter((_, index) => bookmarkedTurns.includes(index));
 
+    const LLM_OPTIONS: { id: LlmSelection, label: string, icon: React.ReactNode }[] = [
+        { id: 'all', label: 'All', icon: null },
+        { id: 'gemini', label: 'Gemini', icon: <GeminiIcon className="w-4 h-4" /> },
+        { id: 'openai', label: 'OpenAI', icon: <OpenAiIcon className="w-4 h-4" /> },
+        { id: 'abacus', label: 'Abacus', icon: <AbacusIcon className="w-4 h-4 text-yellow-300" /> }
+    ];
+
     return (
         <div className="glass neon p-6 h-full flex flex-col">
             <div className="flex flex-col md:flex-row gap-6">
@@ -283,6 +332,38 @@ ${turn.abacus}
                     </div>
                 </div>
             )}
+            
+            <div className="my-4">
+                <h4 className="text-md font-semibold mb-2 text-center text-white">Select Inference LLM</h4>
+                <div className="flex justify-center gap-2 p-1 bg-gray-900/50 rounded-lg max-w-md mx-auto">
+                    {LLM_OPTIONS.map(opt => (
+                        <button
+                            key={opt.id}
+                            onClick={() => setSelectedLlm(opt.id)}
+                            className={`flex-1 text-sm capitalize py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2 ${selectedLlm === opt.id ? 'bg-indigo-600 text-white' : 'bg-gray-800 hover:bg-indigo-600/50'}`}
+                            disabled={isResponding}
+                        >
+                            {opt.icon}
+                            <span>{opt.label}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <div className="my-4 flex-shrink-0">
+                <label htmlFor="custom-prompt" className="block text-sm font-bold text-gray-300 mb-2">
+                    Custom Prompt Prefix <span className="font-normal text-gray-400">(optional)</span>
+                </label>
+                <textarea
+                    id="custom-prompt"
+                    rows={3}
+                    value={customPrompt}
+                    onChange={(e) => setCustomPrompt(e.target.value)}
+                    className="w-full bg-gray-900/50 border border-gray-700 rounded-lg p-3 text-white transition-all duration-300 input-glow-green"
+                    placeholder="Provide context or instructions to prepend to your message. E.g., 'Summarize the following text for a 5th grader:'"
+                    disabled={isResponding}
+                />
+            </div>
 
             <div className="flex-grow min-h-0">
                 <TriChatInterface 
@@ -295,6 +376,7 @@ ${turn.abacus}
                     onCopy={handleCopy}
                     onBookmark={handleBookmark}
                     onVote={handleVote}
+                    selectedLlm={selectedLlm}
                 />
             </div>
         </div>

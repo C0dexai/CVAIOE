@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 
 export function LoaderIcon({ className = "w-6 h-6" }: { className?: string }): React.ReactNode {
@@ -109,6 +110,22 @@ export function ThumbDownIcon({ className = "w-6 h-6" }: { className?: string })
     return (
         <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
             <path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/>
+        </svg>
+    );
+}
+
+export function CodeIcon({ className = "w-6 h-6" }: { className?: string }): React.ReactNode {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
+            <path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/>
+        </svg>
+    );
+}
+
+export function DownloadIcon({ className = "w-6 h-6" }: { className?: string }): React.ReactNode {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
         </svg>
     );
 }

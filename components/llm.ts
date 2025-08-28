@@ -1,13 +1,14 @@
 
+
+
 import { GoogleGenAI } from '@google/genai';
 
-export async function getGeminiResponse(apiKey: string, prompt: string): Promise<string> {
-    if (!apiKey) {
-        return "Gemini API Key not provided. Please set it in the Custom Instructions panel.";
+export async function getGeminiResponse(prompt: string): Promise<string> {
+    if (!process.env.API_KEY) {
+        return "Gemini API Key not found in environment variables.";
     }
     try {
-        // We are assuming the apiKey is passed correctly from a secure source.
-        const ai = new GoogleGenAI({ apiKey });
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
@@ -19,16 +20,18 @@ export async function getGeminiResponse(apiKey: string, prompt: string): Promise
     }
 }
 
-export async function getOpenAiResponse(apiKey: string, prompt: string): Promise<string> {
-    if (!apiKey) {
-        return "OpenAI API Key not provided. Please set it in the Custom Instructions panel.";
+export async function getOpenAiResponse(prompt: string, apiKey?: string): Promise<string> {
+    const keyToUse = apiKey || process.env.OPENAI_API_KEY;
+    
+    if (!keyToUse) {
+        return "OpenAI API Key not found. Please provide one in the UI or set the OPENAI_API_KEY environment variable.";
     }
     try {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
+                'Authorization': `Bearer ${keyToUse}`
             },
             body: JSON.stringify({
                 model: 'gpt-3.5-turbo',
@@ -54,12 +57,12 @@ export async function getOpenAiResponse(apiKey: string, prompt: string): Promise
 // Abacus is a conceptual, precision-focused model in this app.
 // We will use the Gemini API with a special system instruction to simulate this.
 // Therefore, it requires the Gemini API Key.
-export async function getAbacusResponse(geminiApiKey: string, prompt: string): Promise<string> {
-    if (!geminiApiKey) {
-        return "Gemini API Key (used for Abacus simulation) not provided. Please set it in the Custom Instructions panel.";
+export async function getAbacusResponse(prompt: string): Promise<string> {
+    if (!process.env.API_KEY) {
+        return "Gemini API Key (used for Abacus simulation) not found in environment variables.";
     }
     try {
-        const ai = new GoogleGenAI({ apiKey: geminiApiKey });
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,

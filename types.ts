@@ -83,6 +83,7 @@ export type LlmStrategy = 'GEMINI_PRIMARY' | 'OPENAI_PRIMARY' | 'ABACUS_PRIMARY'
 export type OrchestrationStatus = 'idle' | 'starting' | 'streaming' | 'completed' | 'failed';
 export type TaskStatus = 'pending' | 'running' | 'completed' | 'error';
 export type LlmName = 'gemini' | 'openai' | 'abacus';
+export type LlmSelection = LlmName | 'all';
 
 export interface DualLlmTask {
     id: string; // SSE messages have string taskIds
